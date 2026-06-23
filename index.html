@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>for you, everything for us</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Plus+Jakarta+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+    
+    <style>
+        /* --- RESET & GLOBAL STYLES --- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            scroll-behavior: smooth;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: linear-gradient(135deg, #1a000d 0%, #0d001a 50%, #000000 100%);
+            color: #f5f0f5;
+            overflow-x: hidden;
+        }
+
+        /* Hide scrollbar initially when gift is not opened */
+        body.locked {
+            overflow: hidden;
+        }
+
+        /* --- BACKGROUND CANVAS (FALLING PETALS) --- */
+        #petalsCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* --- REUSABLE GLASSMORPHISM WORK --- */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 2.5rem;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            max-width: 600px;
+            width: 90%;
+            text-align: center;
+            transition: all 0.4s ease;
+        }
+
+        h1, h2, h3 {
+            font-family: 'Playfair Display', serif;
+            letter-spacing: 1px;
+            color: #ffe6f2;
+        }
+
+        section {
+            position: relative;
+            min-height: 100vh;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 4rem 2rem;
+            z-index: 2;
+        }
+
+        /* --- HALAMAN 1: SPLASH SCREEN / GIFT BOX --- */
+        #splash-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, #2d0016 0%, #05000a 100%);
+            z-index: 999;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 1s ease, visibility 1s ease;
+        }
+
+        #splash-screen.fade-out {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .gift-container {
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .gift-box {
+            font-size: 6rem;
+            animation: bounceTilt 2.5s infinite ease-in-out;
+            display: inline-block;
+            user-select: none;
+        }
+
+        .gift-text {
+            margin-top: 1.5rem;
+            font-size: 1.2rem;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: #ff99cc;
+            opacity: 0.8;
+            animation: pulse 1.5s infinite alternate;
+        }
+
+        /* --- HALAMAN 2: THE COVER --- */
+        #cover .cover-title {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            animation: fadeInUp 1.5s ease;
+        }
+
+        #cover .cover-sub {
+            font-size: 1.1rem;
+            font-style: italic;
+            color: #ffb3d9;
+            opacity: 0.7;
+            margin-bottom: 3rem;
+        }
+
+        .scroll-hint {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            opacity: 0.6;
+        }
+
+        .sakura-icon {
+            font-size: 1.8rem;
+            animation: spin 6s linear infinite;
+        }
+
+        /* --- HALAMAN 3: THE LETTER --- */
+        .letter-text {
+            font-size: 1.05rem;
+            line-height: 1.8;
+            color: #e6d9e6;
+            text-align: justify;
+            margin-bottom: 1.5rem;
+        }
+
+        .letter-signature {
+            font-family: 'Playfair Display', serif;
+            font-style: italic;
+            text-align: right;
+            color: #ff99cc;
+        }
+
+        /* --- HALAMAN 4: REASONS GRID --- */
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            width: 100%;
+            max-width: 900px;
+            margin-top: 2rem;
+        }
+
+        .reason-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+            backdrop-filter: blur(4px);
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        .reason-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 153, 204, 0.05);
+            border-color: rgba(255, 153, 204, 0.3);
+            box-shadow: 0 10px 20px rgba(255, 153, 204, 0.1);
+        }
+
+        .reason-icon {
+            font-size: 1.5rem;
+            margin-bottom: 0.75rem;
+            display: block;
+        }
+
+        /* --- HALAMAN 5: INTERACTIVE GARDEN --- */
+        .garden-box {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 2rem;
+            margin-top: 3rem;
+            max-width: 700px;
+        }
+
+        .flower-item {
+            position: relative;
+            font-size: 2.5rem;
+            cursor: pointer;
+            transition: transform 0.2s;
+            user-select: none;
+        }
+
+        .flower-item:hover {
+            transform: scale(1.2);
+        }
+
+        .tooltip {
+            position: absolute;
+            bottom: 130%;
+            left: 50%;
+            transform: translateX(-50%) translateY(10px);
+            background: rgba(15, 0, 10, 0.95);
+            border: 1px solid #ff99cc;
+            color: #ffe6f2;
+            padding: 0.5rem 0.8rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            z-index: 10;
+        }
+
+        .flower-item:hover .tooltip {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* --- HALAMAN 6: GALLERY --- */
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            max-width: 500px;
+            width: 100%;
+            margin: 2rem 0;
+        }
+
+        .photo-frame {
+            position: relative;
+            width: 100%;
+            padding-bottom: 100%; /* Square aspect ratio */
+            overflow: hidden;
+            border-radius: 8px;
+            border: 4px solid rgba(255, 255, 255, 0.05);
+            background: #111;
+        }
+
+        .photo-frame img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: grayscale(40%) contrast(110%);
+            transition: filter 0.5s ease;
+        }
+
+        .photo-frame:hover img {
+            filter: grayscale(0%) contrast(100%);
+        }
+
+        .gallery-words {
+            display: flex;
+            gap: 1.5rem;
+            font-size: 1.1rem;
+            letter-spacing: 2px;
+            color: #ff99cc;
+            font-family: 'Playfair Display', serif;
+            font-style: italic;
+        }
+
+        /* --- HALAMAN 7: CLOSING --- */
+        .closing-sub {
+            margin-top: 1rem;
+            opacity: 0.6;
+            font-size: 0.95rem;
+        }
+        .credits {
+            margin-top: 4rem;
+            font-size: 0.75rem;
+            opacity: 0.3;
+            letter-spacing: 1px;
+        }
+
+        /* --- FLOATING MUSIC PLAYER --- */
+        .music-player {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(20, 0, 15, 0.85);
+            border: 1px solid rgba(255, 153, 204, 0.2);
+            backdrop-filter: blur(10px);
+            padding: 0.6rem 1rem;
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.5s ease;
+        }
+
+        .music-player.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .play-btn {
+            background: #ff99cc;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #1a000d;
+            font-weight: bold;
+        }
+
+        .track-info {
+            font-size: 0.75rem;
+            max-width: 120px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .visualizer {
+            display: flex;
+            align-items: flex-end;
+            gap: 2px;
+            height: 15px;
+            width: 20px;
+        }
+
+        .bar {
+            width: 3px;
+            height: 2px;
+            background: #ff99cc;
+            animation: pulseBar 0.5s ease infinite alternate;
+            animation-play-state: paused;
+        }
+
+        .playing .bar {
+            animation-play-state: running;
+        }
+        .bar:nth-child(2) { animation-delay: 0.15s; }
+        .bar:nth-child(3) { animation-delay: 0.3s; }
+
+        /* --- ANIMATIONS --- */
+        @keyframes bounceTilt {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            25% { transform: translateY(-10px) rotate(-5deg); }
+            75% { transform: translateY(-5px) rotate(5deg); }
+        }
+        @keyframes pulse {
+            from { opacity: 0.4; }
+            to { opacity: 0.9; }
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes pulseBar {
+            from { height: 2px; }
+            to { height: 15px; }
+        }
+
+        /* --- RESPONSIVE DESIGN --- */
+        @media (max-width: 600px) {
+            #cover .cover-title { font-size: 2.2rem; }
+            .grid-container { grid-template-columns: 1fr; }
+            .gallery-grid { max-width: 320px; }
+        }
+    </style>
+</head>
+<body class="locked">
+
+    <canvas id="petalsCanvas"></canvas>
+
+    <div id="splash-screen">
+        <div class="gift-container" onclick="openGift()">
+            <div class="gift-box">🎁</div>
+            <div class="gift-text">Tap to Open</div>
+        </div>
+    </div>
+
+    <div class="music-player" id="audioPlayerWidget">
+        <button class="play-btn" onclick="toggleMusic()" id="playBtn">❚❚</button>
+        <div class="track-info">
+            <span style="display:block; font-weight:600;">shape of my heart</span>
+            <span style="opacity:0.6;">Instrumental</span>
+        </div>
+        <div class="visualizer" id="visualizer">
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+        </div>
+    </div>
+    <audio id="bgMusic" loop src="music/WhatsApp Audio 2026-06-01 at 20.27.17.mpeg.mp3"></audio>
+
+    <section id="cover">
+        <h1 class="cover-title">For You, everything for us</h1>
+        <p class="cover-sub">A love letter in bloom</p>
+        <div class="scroll-hint">
+            <span class="sakura-icon">🌸</span>
+            <span>Scroll to discover</span>
+        </div>
+    </section>
+
+    <section id="letter">
+        <div class="glass-card">
+            <h2 style="margin-bottom: 1.5rem;">pesan dari ayya untuk papa ken</h2>
+            <p class="letter-text">
+                haiii papaaa hihii ada yang ulang tahun nihh
+
+HAPPY BIRTHDAY yahh ✨
+
+si tiang ultah yahh, uda uda gausa rebutin mama, uda pasti mama milih ayya wlee 😜
+
+oiya makasih yah uda mau menjadi papa yang baik ya walaupun kadang durhaka dikit sama aku, mana jail nya ga ketolong lagi bikin kesel mulu
+
+tapi gapapa ko aku kan bisa bales wlee, selamat ulang tahun yah, meskipun kita baru kenal dan juga ga lama kenal tapi gapapa ayya merasa deket gitu sama papa, kek uda jadi keluarga aku juga gitu makasi ya buat papa ken, mama izara juga uda mau masuk ke kehidupan ayya, ayya seneng banget ada kalian, bahagia bahagia ya kalian, tetep jadi diri kalian sendiri jangan berubah karena kemauan orang lain, inget itu ya
+
+eum suda ya ayya gatau mau ngomong apa lagi hehe, pokoknya makasi ya buat kalian love you 🤍✨
+            </p>
+            <p class="letter-signature">- Always Yours ❤️</p>
+        </div>
+    </section>
+
+    <section id="letter">
+        <div class="glass-card">
+            <h2 style="margin-bottom: 1.5rem;">pesan dari zaraa untuk kenn</h2>
+            <p class="letter-text">
+                ----- haii kenn 👋🏻🤍 -----
+HAPPY BIRTHDAY 🫂🤍 
+semoga panjang umurr , sehat selalu , dipermudahkan rezeki nyaa , dan senantiasa berbakti kepada orang tuaa . 
+di tanggal ini kamu lahir sebagai pemuda yang kuat , lucu , baik , tulus , pekerja keras , dan bertanggung jawab . 
+semoga kedepan nya kamu masih jadi pemuda yang seperti itu , dan ya jaga kesehatan , kalau cape jangan di paksa , istirahat dulu kalau tenaga udah balik bisa di lanjut lagi pekerjaan nya . 
+selalu jadi pemuda yang aku kenal seperti sekarang , jangan pernah berubah hanya karena kemauan orang lain , tetap jadi diri kamu sendiri , berubah dengan ikutin hal yang positif , jangan ikutin hal yang negatif . 
+semoga kedepan nya kamu senantiasa bahagia yaa .
+            </p>
+            <p class="letter-text">
+                oh iya , aku cuman mau bilang makasi ya waktu itu uda naroh perasaan ke aku , aku hargain itu , dan jujur aku juga ada perasaan ke kamu tapi aku rasa aku gabakal bisa dapetin kamu jadi aku kubur perasaan aku , aku berfikir mungkin dengan kubur perasaan aku ini aku masi bisa temenan aja sama kamu , yap just friend , aku selalu perhatiin hal-hal kecil dari kamu seperti typing kamu , kelakuan kamu , nada bicara kamu , aku perhatiin semua itu dan entahlah aku merasa kamu ada perasaan ke aku , dan ya lagi lagi aku kubur harapan itu , aku gamau terlalu pede dulu karena secarakan kita kayak lagi ngerp gitu , aku juga mikir gamungkin lelaki kayak kamu nyimpan perasaan ke wanita kayak aku . 
+tapi pas tau kamu punya perasaan ke aku juga , aku kayak . . . 
+SENENG BANGET GILAKK ! ! ! ! 
+ekhm . . ! 
+maaf kepencet emot . . 🙏🏻
+pokoknya kayak gitu , awal aku cuma ngerasa kalo kamu ada perasaan , tapi aku ga mau pede dulu jadi yaa aku coba perhatiin hal-hal kecil lagi dari kamu yang buat aku yakin kamu ada perasaan ke aku atau ngga . 
+pokoknya gitu deh .
+intinya kamu pasangan dan suami yang terbaikk menurut aku , partner yang peran nya selalu ada untuk aku dan ayya , pekerja keras dll . 
+
+keasikan cerita jadinya lupa deh , scroll ke bawah lagi yakk ! ! 
+masih ada kejutan lagi dari aku dan ayyaa ! ! 
+
+ehehehheh lopyuu my calm lovee 🫂🤍.
+            </p>
+            <p class="letter-signature">- Always Yours ❤️</p>
+        </div>
+    </section>
+
+    <section id="reasons">
+        <h2>Why we like you</h2>
+        <p style="opacity:0.6; font-style:italic; margin-top:0.5rem;">A thousand reasons, but here are a few...</p>
+        <div class="grid-container">
+            <div class="reason-card">
+                <span class="reason-icon">💝</span>
+                <h3>Your Smile</h3>
+                <p style="font-size:0.9rem; opacity:0.7; margin-top:0.5rem;">Brightens up even my darkest, heaviest days instantly.</p>
+            </div>
+            <div class="reason-card">
+                <span class="reason-icon">💫</span>
+                <h3>Your Soul</h3>
+                <p style="font-size:0.9rem; opacity:0.7; margin-top:0.5rem;">Pure, genuine, and more beautiful than any art.</p>
+            </div>
+            <div class="reason-card">
+                <span class="reason-icon">🛡️</span>
+                <h3>Your Strength</h3>
+                <p style="font-size:0.9rem; opacity:0.7; margin-top:0.5rem;">How you gracefully handle everything life throws at you.</p>
+            </div>
+            <div class="reason-card">
+                <span class="reason-icon">💟</span>
+                <h3>Your kindness</h3>
+                <p style="font-size:0.9rem; opacity:0.7; margin-top:0.5rem;">The way you treat me as your partner makes me think of you constantly.</p>
+            </div>
+            <div class="reason-card">
+                <span class="reason-icon">❤‍🔥</span>
+                <h3>your maturity</h3>
+                <p style="font-size:0.9rem; opacity:0.7; margin-top:0.5rem;">One of the reasons I like you is your maturity; it makes me feel secure without needing a lot of explanation.</p>
+            </div>
+            <div class="reason-card">
+                <span class="reason-icon">✨</span>
+                <h3>your silliness</h3>
+                <p style="font-size:0.9rem; opacity:0.7; margin-top:0.5rem;">your silly antics always make me smile and laugh every day.</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="gallery">
+        <h2>Your handsome Pictures</h2>
+        <div class="gallery-grid">
+            <div class="photo-frame"><img src="https://raw.githubusercontent.com/cipaaluvv/my-website/main/WhatsApp%20Image%202026-06-22%20at%2010.33.57%20(2).jpeg" alt="you"></div>
+            <div class="photo-frame"><img src="https://raw.githubusercontent.com/cipaaluvv/my-website/main/WhatsApp%20Image%202026-06-22%20at%2010.33.57%20(1).jpeg" alt="are"></div>
+            <div class="photo-frame"><img src="https://raw.githubusercontent.com/cipaaluvv/my-website/main/WhatsApp%20Image%202026-06-22%20at%2010.33.56.jpeg" alt="so"></div>
+            <div class="photo-frame"><img src="https://raw.githubusercontent.com/cipaaluvv/my-website/main/WhatsApp%20Image%202026-06-22%20at%2010.33.57.jpeg" alt="handsome"></div>
+        </div>
+        <div class="gallery-words">
+            <span>you</span> • <span>are</span> • <span>so</span> • <span>handsome</span>
+        </div>
+    </section>
+
+    <section id="closing">
+        <h1 style="font-size: 2.5rem; text-align: center;">Happy birthday to the best dad and husband</h1>
+        <p class="closing-sub">we will always love you</p>
+        
+        <p class="credits">from ayya and zaraa , for kenn / akmall</p>
+    </section>
+
+    <script>
+        /* --- 1. FALLING PETALS EFFECT (CANVAS) --- */
+        const canvas = document.getElementById('petalsCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let maxPetals = 40;
+        let petalsArray = [];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        class Petal {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height - canvas.height;
+                this.size = Math.random() * 8 + 5;
+                this.speedY = Math.random() * 1.5 + 0.8;
+                this.speedX = Math.random() * 1 - 0.5;
+                this.angle = Math.random() * 360;
+                this.spinSpeed = Math.random() * 1 - 0.5;
+                // Soft pink colors
+                const colors = ['#ffb3d9', '#ff99cc', '#ffccd5', '#ffe6ee'];
+                this.color = colors[Math.floor(Math.random() * colors.length)];
+                this.opacity = Math.random() * 0.6 + 0.2;
+            }
+
+            update() {
+                this.y += this.speedY;
+                this.x += this.speedX + Math.sin(this.y / 30) * 0.5; // Natural swaying motion
+                this.angle += this.spinSpeed;
+
+                if (this.y > canvas.height) {
+                    this.y = -20;
+                    this.x = Math.random() * canvas.width;
+                }
+            }
+
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.angle * Math.PI / 180);
+                ctx.beginPath();
+                // Drawing an organic petal shape using oval arcs
+                ctx.ellipse(0, 0, this.size, this.size / 1.5, 0, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.globalAlpha = this.opacity;
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        function initPetals() {
+            for (let i = 0; i < maxPetals; i++) {
+                petalsArray.push(new Petal());
+            }
+        }
+
+        function animatePetals() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            petalsArray.forEach(petal => {
+                petal.update();
+                petal.draw();
+            });
+            requestAnimationFrame(animatePetals);
+        }
+
+        initPetals();
+        animatePetals();
+
+        /* --- 2. INTERACTIVE ACTIONS (OPEN GIFT & MUSIC) --- */
+        const audio = document.getElementById('bgMusic');
+        const playBtn = document.getElementById('playBtn');
+        const visualizer = document.getElementById('visualizer');
+        const widget = document.getElementById('audioPlayerWidget');
+
+        function openGift() {
+            // Un-lock scrolling
+            document.body.classList.remove('locked');
+            
+            // Fade out splash screen
+            document.getElementById('splash-screen').classList.add('fade-out');
+
+            // Play Music
+            audio.play().then(() => {
+                widget.classList.add('show');
+                visualizer.classList.add('playing');
+                playBtn.innerText = "❚❚";
+            }).catch(err => {
+                // Autoplay block handler fallback
+                console.log("Audio waiting for explicit interaction context.");
+                widget.classList.add('show');
+            });
+
+            // Auto scroll down gently to cover section
+            setTimeout(() => {
+                document.getElementById('cover').scrollIntoView({ behavior: 'smooth' });
+            }, 400);
+        }
+
+        function toggleMusic() {
+            if (audio.paused) {
+                audio.play();
+                playBtn.innerText = "❚❚";
+                visualizer.classList.add('playing');
+            } else {
+                audio.pause();
+                playBtn.innerText = "▶";
+                visualizer.classList.remove('playing');
+            }
+        }
+    </script>
+</body>
+</html>
